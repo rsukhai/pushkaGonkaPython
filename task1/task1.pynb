@@ -1,0 +1,128 @@
+
+
+class Animal:
+    def __init__(self,type,name,age):
+        self._type = type
+        self._name = name
+        self._age = age
+
+
+class Omnivores(Animal):
+    def __init__(self,name,age):
+        super().__init__("Omnivores",name,age)
+
+
+class Birds(Omnivores):
+    number_of_wings = 6
+
+    def info(self):
+        print(f"{self._name} has {self.number_of_wings} wings and whisle") 
+
+
+class Herbivorous(Animal):
+     def __init__(self,name,age):
+        super().__init__("Herbivorous",name,age)
+
+
+class Reptile(Herbivorous):
+    is_poisonous = False
+    def dangerous(self):
+        if (self.is_poisonous == False):
+            print(f"{self._name} has no danger") 
+        else:
+            print(f"{self._name} is danger") 
+
+
+
+
+class Сarnivorous(Animal):
+     def __init__(self,name,age):
+        super().__init__("Сarnivorous",name,age)
+
+
+class Mammal(Сarnivorous):
+   is_attack= True
+   def move(self):
+        if self.is_attack:
+           print(f"{self._name} attacking")
+        else:
+           print(f"{self._name} chillin")
+           
+           
+
+
+
+class Zoo:
+    def __init__(self):
+        self.list_of_animal = []
+
+    def add_animal(self,Animal):
+        self.list_of_animal.append(Animal)
+
+    def __str__(self):
+        zoo_info = "Animals in the Zoo:\n"
+        for animal in self.list_of_animal:
+            zoo_info += f"Type: {animal._type}, Name: {animal._name}, Age: {animal._age}\n"
+        return zoo_info
+    
+    def find_oldest_animal(self):
+        if not self.list_of_animal:
+            return None
+    
+        oldest_animal = self.list_of_animal[0]
+        for animal in self.list_of_animal:
+            if animal._age > oldest_animal._age:
+                oldest_animal = animal
+        print(f"Oldest Animal: Type: {oldest_animal._type}, Name: {oldest_animal._name}, Age: {oldest_animal._age}")
+        return oldest_animal
+
+    def find_type(self, type_):
+        if not self.list_of_animal:
+            print("No animals in the zoo.")
+            return
+        
+        found_animals = []
+        for animal in self.list_of_animal:
+            if animal._type == type_:
+                found_animals.append(animal)
+
+        if found_animals:
+            print(f"Animals of type '{type_}':")
+            for animal in found_animals:
+                print(f"Type: {animal._type}, Name: {animal._name}, Age: {animal._age}")
+        else:
+            print("No types of animal")
+
+        
+    
+
+
+bird = Birds("Parrot", 2)
+bird2 = Birds("Parrot", 4)
+bird3 = Birds("Parrot", 50)
+mammal = Mammal("Elephant", 10)
+reptile = Reptile("Lizard", 1)
+
+
+zoo = Zoo()
+
+zoo.add_animal(bird)
+zoo.add_animal(bird2)
+zoo.add_animal(bird3)
+zoo.add_animal(mammal)
+zoo.add_animal(reptile)
+
+
+
+zoo.find_oldest_animal()
+zoo.find_type("Omnivores")
+
+
+
+
+print(zoo)
+
+
+bird.info()
+mammal.move()
+reptile.dangerous()
