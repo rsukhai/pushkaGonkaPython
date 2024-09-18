@@ -35,7 +35,7 @@ class Logger:
         self.old_logs.append(log_entry)
         
         try:
-            with open(self.log_file, 'a') as file:
+            with open(self.log_file, 'a', encoding='utf-8') as file:
                 file.write(log_entry + "\n")
         except PermissionError:
             raise LoggingError(f"Немає прав на запис у файл: {self.log_file}")
@@ -57,7 +57,7 @@ class Logger:
     def save_old_logs_to_file(self, output_file='old_logs.txt'):
         """Запис усіх старих логів в окремий файл."""
         try:
-            with open(output_file, 'w') as file:
+            with open(output_file, 'w', encoding='utf-8') as file:
                 for log in self.old_logs:
                     file.write(log + "\n")
             print(f"Старі логи були успішно збережені в {output_file}")
@@ -69,14 +69,14 @@ class Logger:
     def move_old_logs_to_all_logs(self, old_logs_file='old_logs.txt', all_logs_file='all_logs.txt'):
         """Переміщення даних з old_logs.txt в all_logs.txt з підписом дати та очищення old_logs.txt."""
         try:
-            with open(old_logs_file, 'r') as file:
+            with open(old_logs_file, 'r', encoding='utf-8') as file:
                 logs = file.readlines()
-            with open(all_logs_file, 'a') as file:
+            with open(all_logs_file, 'a', encoding='utf-8') as file:
                 current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 for log in logs:
                     file.write(f"{current_date} - {log.strip()}\n")
             
-            open(old_logs_file, 'w').close()
+            open(old_logs_file, 'w', encoding='utf-8').close()
             
             print(f"Логи з {old_logs_file} успішно переміщені в {all_logs_file} і {old_logs_file} очищено.")
         
