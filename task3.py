@@ -1,82 +1,207 @@
-import random
-import pickle
+import time
 
-class GameObject:
-    def __init__(self, name, x, y):
+def event_listener(event):
+    def decorator(function):
+        if not hasattr(function, 'events'):
+            function.events = {}
+        function.events[event] = function
+        print('function.event ', function.events)
+        return function
+    return decorator
+
+class GameObject():
+    def __init__(self, name, health = 100):
         self.name = name
-        self.x = x
-        self.y = y
-    
+        self.health = health
+
     def update(self):
-        pass  # Тут можна оновлювати стан об'єкта
+        print(f"Updated {self.name}")
+        pass 
 
     def render(self):
-        print(f"{self.name} знаходиться на позиції ({self.x}, {self.y})")
+        print(f"{self.name} - Health: {self.health}")
 
-    def move(self, dx, dy):
-        self.x += dx
-        self.y += dy
+    def action (self, obj):
+        raise NotImplementedError("Every subclass has to have this methd!!!")
+    
+    
+    def save(self, file):
+        file.write(f"{self.name},{self.health}\n")
 
+    def load(cls, line):
+        name, health = line.strip().split(',')
+        return cls(name, int(health))
+    
+    def __str__(self):
+        return f"{self.name} - Health: {self.health}"
+    
 class Player(GameObject):
-    def __init__(self, name, x, y):
-        super().__init__(name, x, y)
+    def __init__(self, name, health = 100, armor = 100):
+        super().__init__(name, health)
+        self.armor = armor
 
-    def handle_input(self, key):
-        if key == 'w':
-            self.move(0, -1)
-        elif key == 's':
-            self.move(0, 1)
-        elif key == 'a':
-            self.move(-1, 0)
-        elif key == 'd':
-            self.move(1, 0)
+    @event_listener('on_collision')
+    def on_colision(self, obj):
+        print(f"Гравець на імя {self.name} спіткнувся об {obj.name}(")
+
+    def action(self, obj):
+        if isinstance(obj, Enemy):
+            print(f"Гравець на імя {self.name} атакує ворога на імя {obj.name}")
+            self.health -= 25
+            self.armor -= 5
+            obj.health -=50
+            obj.armor -=10
+        elif isinstance(obj, Item):
+            print(f"Гравець на імя {self.name} хоче взяємодіяти з предметом: {obj.name}")
+
+    def save(self, file):
+        file.write(f"{self.name},{self.health},{self.armor}\n")
+
+    def load(cls, line):
+        name, health, armor = line.strip().split(',')
+        return cls(name, int(health), int(armor))
 
 class Enemy(GameObject):
-    def update(self):
-        # Випадковий рух ворога
-        self.move(random.choice([-1, 0, 1]), random.choice([-1, 0, 1]))
+    def __init__(self, name, health = 100, armor = 100):
+        super().__init__(name, health)
+        self.armor = armor
 
-def save_game(player, enemies, filename="game_state.pkl"):
-    with open(filename, 'wb') as f:
-        pickle.dump({'player': player, 'enemies': enemies}, f)
-    print("Гра збережена!")
+    @event_listener('on_collision')
+    def on_colision(self, obj):
+        print(f"Ворог на імя {self.name} спіткнувся об {obj.name}(")
 
-def load_game(filename="game_state.pkl"):
-    try:
-        with open(filename, 'rb') as f:
-            data = pickle.load(f)
-        print("Гру завантажено!")
-        return data['player'], data['enemies']
-    except FileNotFoundError:
-        print("Файл збереження не знайдено.")
-        return None, None
+    def action(self, obj):
+        if isinstance(obj, Player):
+            print(f"Ворог на імя {self.name} атакує гравця на імя {obj.name}")
+            self.health -= 25
+            self.armor -= 5
+            obj.health -= 50
+            obj.armor -= 10
+        elif isinstance(obj, Item):
+            print(f"Ворог на імя {self.name} хоче взяємодіяти з предметом: {obj.name}")
 
-def game_loop(player, enemies):
-    while True:
-        for enemy in enemies:
-            enemy.update()
+    def save(self, file):
+        file.write(f"{self.name},{self.health},{self.armor}\n")
 
+    def load(cls, line):
+        name, health, armor = line.strip().split(',')
+        return cls(name, int(health), int(armor))
+class Item(GameObject):
+    def __init__(self, name, health = 100):
+        super().__init__(name, health)
+        self.health -= 1
+
+    def action(self, other):
+        print(f"{other.name} взаємодіє з {self.name}.")
+
+    def save(self, file):
+        file.write(f"{self.name},{self.health}\n")
+
+    def load(cls, line):
+        name, health = line.strip().split(',')
+        return cls(name, int(health))
+    
+def save_game(player, enemy, item, filename="game_state.txt"):
+    with open(filename, 'w') as file:
+        player.save(file)
+        enemy.save(file)
+        item.save(file)
+    print("Гру збережено!")
+
+def load_game(filename="game_state.txt"):
+    n = 0
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        player = Player.load(lines[n])
+        enemy = Enemy.load(lines[n + 1])
+        item = Item.load(lines[n + 1])
+    return player, enemy, item
+
+player = Player("Roman")
+print(player)
+print('\n')
+
+enemy = Enemy("putin")
+print(enemy)
+print('\n')
+
+item = Item("pistolet")
+print(item)
+print('\n')
+
+item.action(player)
+print(item)
+print('\n')
+
+player.action(enemy)
+print(enemy)
+print(player)
+print('\n')
+
+player.on_colision(item)
+print('\n')
+
+def game_loop():
+    if enemy.health > 0:
+        enemy.update()
+        player.update()
+        print('\n')
+
+        print(f"{player.name} атакує {enemy.name}")
+        enemy.health -= 10
+
+        print("Стан об'єктів:")
         player.render()
-        for enemy in enemies:
-            enemy.render()
+        enemy.render()
+        print('\n')
+    yield
+    time.sleep(1)
 
-        user_input = input("Натисніть w/a/s/d для руху, q щоб вийти, або z щоб зберегти гру: ")
-        if user_input == 'q':
-            print("Вихід з гри...")
-            break
-        elif user_input == 'z':
-            save_game(player, enemies)
-        else:
-            player.handle_input(user_input)
+    if enemy.health <= 0:
+        print(f"{player.name} виграв!")
+        return
 
-player, enemies = load_game()
-if not player or not enemies:
-    player = Player("Гравець", 0, 0)
-    enemies = [Enemy("Ворог1", 5, 5), Enemy("Ворог2", -3, -3)]
+game = game_loop()
+for i in game:
+    pass
 
-game_loop(player, enemies)
+load_or_new = input("Завантажити збережену гру? (y/n): ")
+if load_or_new == 'y':
+    try:
+        player, enemy, item = load_game()
+        print("Гру успішно завантажено!")
+    except FileNotFoundError:
+        print("Файл збереженої гри не знайдено. Створюємо нову гру.")
+else:
+    player = Player("Roman")
+    enemy = Enemy("putin")
+    item = Item("pistolet")
 
+HwomToPlay = input("Виберіть персонажа (player, enemy, item): ")
 
-
-
-
+if HwomToPlay == 'player': 
+    command = input("Введіть команду (a - атака на ворога, h - стан гравця, e - взаємодія, q - вихід): ")
+    if command == 'a':
+        player.action(enemy)  # Атака ворога
+    elif command == 'h':
+        print(player)  # Виведення стану гравця
+    elif command == 'e':
+        player.action(item)  # Ворог атакує гравця
+    elif command == 'q':
+        print("Вихід з гри.")  # Завершення гри
+    else:
+        print("Невідома команда!")
+elif HwomToPlay == 'enemy':
+    command = input("Введіть команду (a - атака на персонажа, h - стан ворога, e - взаємодія, q - вихід): ")
+    if command == 'a':
+        enemy.action(player)  # Атака ворога
+    elif command == 'h':
+        print(enemy)  # Виведення стану гравця
+    elif command == 'e':
+        enemy.action(item)  # Ворог атакує гравця
+    elif command == 'q':
+        print("Вихід з гри.")  # Завершення гри
+    else:
+        print("Невідома команда!")
+else:
+    print("Невідома команда!")
